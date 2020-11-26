@@ -6,6 +6,7 @@ import { isPlatform } from '@ionic/react';
 import { CameraResultType, CameraSource, CameraPhoto, Capacitor, FilesystemDirectory } from "@capacitor/core";
 
 export function usePhotoGallery() {
+    const { deleteFile, getUri, readFile, writeFile } = useFilesystem();
 
     const { getPhoto } = useCamera();
 
@@ -17,13 +18,27 @@ export function usePhotoGallery() {
         source: CameraSource.Camera,
         quality: 100
       });
-
+    
       const fileName = new Date().getTime() + '.jpeg';
-        const newPhotos = [{
+      const savedFileImage = await savePicture(cameraPhoto, fileName);
+      const newPhotos = [savedFileImage, ...photos];
+      setPhotos(newPhotos);
+    };
+
+    const savePicture = async (photo: CameraPhoto, fileName: string): Promise<Photo> => {
+      const base64Data = await base64FromPath(photo.webPath!);
+      const savedFile = await writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: FilesystemDirectory.Data
+      });
+    
+      // Use webPath to display the new image instead of base64 since it's
+      // already loaded into memory
+      return {
         filepath: fileName,
-        webviewPath: cameraPhoto.webPath
-        }, ...photos];
-        setPhotos(newPhotos)
+        webviewPath: photo.webPath
+      };
     };
   
     return {
